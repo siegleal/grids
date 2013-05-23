@@ -1,4 +1,6 @@
 import time
+import os
+from Tkinter import *
 
 class world:
 
@@ -37,7 +39,6 @@ class world:
     def tick(self):
         for a in self.actors:
             a.act()
-        
 
 class actor(object):
 
@@ -57,6 +58,9 @@ class actor(object):
 class walker(actor):
 
     def act(self):
+        if not self.world.isInGrid(self.locx, self.locy):
+            self.world.removeActor(self)
+            
         if self.direction == 0: #up
             self.locy -= 1
         elif self.direction == 1: #right
@@ -66,17 +70,55 @@ class walker(actor):
         else: #left
             self.locx -= 1
 
-        if not self.world.isInGrid(self.locx, self.locy):
-            self.world.removeActor(self)
+class EdgeWalker(walker):
 
-w = world(5,5)
-a = walker(0,1,1,w)
-w.addActor(a)
+    def isLegalMove(self):
+        nextx = self.locx
+        nexty = self.locy
 
-while (True):
-    w.drawWorld()
-    w.tick()
-    print
-    time.sleep(1)
+        if self.direction == 0: #up
+            nexty -= 1
+        elif self.direction == 1: #right
+            nextx += 1
+        elif self.direction == 2: #down
+            nexty += 1
+        else: #left
+            nextx -= 1
 
+        return self.world.isInGrid(nextx, nexty)
+
+    def turnRight(self):
+        self.direction = (self.direction + 1) % 4
+
+    def turnLeft(self):
+        self.direction = (self.direction - 1) % 4
+
+    def act(self):
+        if self.isLegalMove():
+            super(EdgeWalker, self).act()
+        else:
+            self.turnRight()
+            super(EdgeWalker, self).act()      
+
+def main():
+    s = 5
+    w = world(s,s)
+    a = EdgeWalker(0,1,1,w)
+    w.addActor(a)
+
+    root = Tk()
+
+    l = Label(root, text="Hello")
+    l.pack()
+
+    root.mainloop()
+    
+    while (True):
+        w.drawWorld()
+        w.tick()
+        print
+        time.sleep(1)
+
+if __name__ == "__main__":
+    main()
 
